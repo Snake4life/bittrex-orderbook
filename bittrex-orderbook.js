@@ -13,7 +13,7 @@ bittrex.options({
  */
 function BittrexOrderbook () {
     this.marketSummaries = function(){};   // Holds market summaries
-    var orderBooks = function(){};        // Holds order books for all markets
+    var orderBooks = function(){};         // Holds order books for all markets
     var pendingUpdates = function(){};     // Holds Nounce updates that have been received out of order
     var nextNounce = function(){};         // Holds next Nounce expected for each order book
     var bookCount = 0;                     // How many orde books have been connected
@@ -38,9 +38,11 @@ function BittrexOrderbook () {
      * @param {string} marketName string in format 'BTC-ETH' to indicated market to pull order book from.
      */
     this.getOrderBook = function(marketName){
-        var sortedOrderBook = function(){}
+        var sortedOrderBook = function(){};
         var buys = [];
+        buys.length = 0;
         var sells = [];
+        sells.length = 0;
         if (orderBooks[marketName] != undefined){
             for (var order in orderBooks[marketName].buy) buys.push(orderBooks[marketName].buy[order]);
             for (var order in orderBooks[marketName].sell) sells.push(orderBooks[marketName].sell[order]);
@@ -62,12 +64,12 @@ function BittrexOrderbook () {
 
     /** 
      * Adds a market summary to the this.marketSummaries object.
-     * @param {marketSummary} summary
+     * @param {marketSummary} s
     */
-    var addSummary = function(summary){
-        this.marketSummaries[summary.MarketName] = new marketSummary(summary.MarketName, summary.High, summary.Low,
-            summary.Volume, summary.Last, summary.BaseVolume, summary.TimeStamp, summary.Bid, summary.Ask, summary.OpenBuyOrders,
-            summary.OpenSellOrders, summary.PrevDay, summary.Created);
+    var addSummary = function(s){
+        this.marketSummaries[s.MarketName] = new marketSummary(s.MarketName, s.High, s.Low,
+            s.Volume, s.Last, s.BaseVolume, s.TimeStamp, s.Bid, s.Ask, s.OpenBuyOrders,
+            s.OpenSellOrders, s.PrevDay, s.Created);
     }.bind(this);
 
     /**
@@ -110,15 +112,13 @@ function BittrexOrderbook () {
         bittrex.getorderbook({ market : marketName, depth : 1, type : 'both' }, function( data ) {
             bookCount++;
             if (data.success){
-                orderBooks[marketName] = function(){}
+                orderBooks[marketName] = function(){};
                 for (var side in data.result){
-                    orderBooks[marketName][side] = function(){}
+                    orderBooks[marketName][side] = function(){};
                     for (var listing in data.result[side]) orderBooks[marketName][side][data.result[side][listing].Rate] = new orderListing(data.result[side][listing].Quantity, data.result[side][listing].Rate);
                 }
             }
-            else {
-                errors.push("Error for " + marketName + ": " + JSON.stringify(data));
-            }
+            else errors.push("Error for " + marketName + ": " + JSON.stringify(data));
             if (bookCount == Object.keys(this.marketSummaries).length){
                 console.log("Pulled all order books.");
                 printErrors();
@@ -228,7 +228,7 @@ function orderListing(Quantity, Rate){
 }
 
 /**
- * 
+ * Holds order book edit updates
  * @param {string} MarketName 
  * @param {number} Nounce 
  * @param {Object} Buys 
