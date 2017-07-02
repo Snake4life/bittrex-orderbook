@@ -35,27 +35,22 @@ function BittrexOrderbook () {
 
     /**
      * Returns orderbook for given market as object with two sorted arrays of orders.
+     * @param {string} marketName string in format 'BTC-ETH' to indicated market to pull order book from.
      */
     this.getOrderBook = function(marketName){
         var sortedOrderBook = function(){}
         var buys = [];
         var sells = [];
         if (orderBooks[marketName] != undefined){
-            for (var order in orderBooks[marketName].buy){
-                buys.push(orderBooks[marketName].buy[order]);
-            }
-            for (var order in orderBooks[marketName].sell){
-                sells.push(orderBooks[marketName].sell[order]);
-            }
+            for (var order in orderBooks[marketName].buy) buys.push(orderBooks[marketName].buy[order]);
+            for (var order in orderBooks[marketName].sell) sells.push(orderBooks[marketName].sell[order]);
             buys.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? 1 : (((b.Rate) < (a.Rate)) ? -1 : 0); });
             sells.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? 1 : (((b.Rate) < (a.Rate)) ? -1 : 0); });
             sortedOrderBook.buy = buys;
             sortedOrderBook.sell = sells;
             return sortedOrderBook;
         }
-        else {
-            console.log("ERROR: " + marketName + " is not a valid order book market.");
-        }
+        else console.log("ERROR: " + marketName + " is not a valid order book market.");
     }
 
     /**
