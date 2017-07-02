@@ -13,7 +13,7 @@ bittrex.options({
  */
 function BittrexOrderbook () {
     this.marketSummaries = function(){};   // Holds market summaries
-    this.orderBooks = function(){};        // Holds order books for all markets
+    var orderBooks = function(){};        // Holds order books for all markets
     var pendingUpdates = function(){};     // Holds Nounce updates that have been received out of order
     var nextNounce = function(){};         // Holds next Nounce expected for each order book
     var bookCount = 0;                     // How many orde books have been connected
@@ -32,6 +32,31 @@ function BittrexOrderbook () {
         }
         else console.log("Error: already connected.");
     }.bind(this);
+
+    /**
+     * Returns orderbook for given market as object with two sorted arrays of orders.
+     */
+    this.getOrderBook = function(marketName){
+        var sortedOrderBook = function(){}
+        var buys = [];
+        var sells = [];
+        if (orderBooks[marketName] != undefined){
+            for (var order in orderBooks[marketName].buy){
+                buys.push(orderBooks[marketName].buy[order]);
+            }
+            for (var order in orderBooks[marketName].sell){
+                sells.push(orderBooks[marketName].sell[order]);
+            }
+            buys.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? 1 : (((b.Rate) < (a.Rate)) ? -1 : 0); });
+            sells.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? 1 : (((b.Rate) < (a.Rate)) ? -1 : 0); });
+            sortedOrderBook.buy = buys;
+            sortedOrderBook.sell = sells;
+            return sortedOrderBook;
+        }
+        else {
+            console.log("ERROR: " + marketName + " is not a valid order book market.");
+        }
+    }
 
     /**
      * Print any errors that have occurred.
@@ -61,7 +86,7 @@ function BittrexOrderbook () {
                 var s = data["result"];
                 for (var obj in s) if (s[obj].MarketName != undefined && s[obj].Volume != null) addSummary(s[obj]);
                 startWebSockets();
-                console.log("Pulling all orderbooks (this can take up to 20 seconds)...")
+                console.log("Pulling all orderBooks (this can take up to 20 seconds)...")
                 for (var market in this.marketSummaries) initializeOrderBook(String(this.marketSummaries[market].MarketName), callback);
             }
             else {
@@ -81,7 +106,7 @@ function BittrexOrderbook () {
     }.bind(this);
 
     /**
-     * Requests the given order book from Bittrex and adds to this.orderBooks structure with market pair as index.
+     * Requests the given order book from Bittrex and adds to orderBooks structure with market pair as index.
      * @param {string} marketName
      * @param {callback} callback function passed from whatever is calling connect. Executed after all order books and market summaries connect.
      */
@@ -90,10 +115,10 @@ function BittrexOrderbook () {
         bittrex.getorderbook({ market : marketName, depth : 1, type : 'both' }, function( data ) {
             bookCount++;
             if (data.success){
-                this.orderBooks[marketName] = function(){}
+                orderBooks[marketName] = function(){}
                 for (var side in data.result){
-                    this.orderBooks[marketName][side] = function(){}
-                    for (var listing in data.result[side]) this.orderBooks[marketName][side][data.result[side][listing].Rate] = new orderListing(data.result[side][listing].Quantity, data.result[side][listing].Rate);
+                    orderBooks[marketName][side] = function(){}
+                    for (var listing in data.result[side]) orderBooks[marketName][side][data.result[side][listing].Rate] = new orderListing(data.result[side][listing].Quantity, data.result[side][listing].Rate);
                 }
             }
             else {
@@ -119,7 +144,7 @@ function BittrexOrderbook () {
         }
         else if (data.M === 'updateExchangeState') {
             data.A.forEach(function(data_for) {
-                if (this.orderBooks[data_for.MarketName] != undefined){
+                if (orderBooks[data_for.MarketName] != undefined){
                     if (pendingUpdates[data_for.MarketName] == undefined){
                         if (pendingUpdates[data_for.MarketName] == undefined){
                             pendingUpdates[data_for.MarketName] = function(){}
@@ -151,12 +176,12 @@ function BittrexOrderbook () {
      */
     var applyNounce = function(bookEdit) {
         for (var edit in bookEdit.Buys){
-            if (bookEdit.Buys[edit].Type == 1) delete this.orderBooks[bookEdit.MarketName].buy[bookEdit.Buys[edit].Rate];
-            else this.orderBooks[bookEdit.MarketName].buy[bookEdit.Buys[edit].Rate] = new orderListing(bookEdit.Buys[edit].Quantity, bookEdit.Buys[edit].Rate);
+            if (bookEdit.Buys[edit].Type == 1) delete orderBooks[bookEdit.MarketName].buy[bookEdit.Buys[edit].Rate];
+            else orderBooks[bookEdit.MarketName].buy[bookEdit.Buys[edit].Rate] = new orderListing(bookEdit.Buys[edit].Quantity, bookEdit.Buys[edit].Rate);
         }
         for (var edit in bookEdit.Sells){
-            if (bookEdit.Sells[edit].Type == 1) delete this.orderBooks[bookEdit.MarketName].sell[bookEdit.Sells[edit].Rate];
-            else this.orderBooks[bookEdit.MarketName].sell[bookEdit.Sells[edit].Rate] = new orderListing(bookEdit.Sells[edit].Quantity, bookEdit.Sells[edit].Rate);
+            if (bookEdit.Sells[edit].Type == 1) delete orderBooks[bookEdit.MarketName].sell[bookEdit.Sells[edit].Rate];
+            else orderBooks[bookEdit.MarketName].sell[bookEdit.Sells[edit].Rate] = new orderListing(bookEdit.Sells[edit].Quantity, bookEdit.Sells[edit].Rate);
         }
         nextNounce[bookEdit.MarketName] = bookEdit.Nounce + 1;
     }.bind(this);
