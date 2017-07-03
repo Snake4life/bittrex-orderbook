@@ -118,7 +118,10 @@ function BittrexOrderbook () {
                     for (var listing in data.result[side]) orderBooks[marketName][side][data.result[side][listing].Rate] = new orderListing(data.result[side][listing].Quantity, data.result[side][listing].Rate);
                 }
             }
-            else errors.push("Error for " + marketName + ": " + JSON.stringify(data));
+            else {
+                errors.push("Error for " + marketName + ": " + JSON.stringify(data));
+                delete this.marketSummaries[marketName];
+            }
             if (bookCount == Object.keys(this.marketSummaries).length){
                 console.log("Pulled all order books.");
                 printErrors();
