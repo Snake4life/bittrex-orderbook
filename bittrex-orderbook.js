@@ -19,57 +19,18 @@ function BittrexOrderbook () {
     var bookCount = 0;                     // How many orde books have been connected
     var connected = false;                 // Whether the BittrexOrderbook has been connected to Bittrex
     var errors = [];                       // Holds any errors for INVALID_MARKET
+    var called = false;
 
     /**
      * Start the connection process.
      * @param {callback} callback function passed from whatever is calling connect. Executed after all order books and market summaries connect.
      */
     this.connect = function(callback){
-        if (!connected){
+        if (!connected && !called){
+            called = true;
             console.log("Connecting to Bittrex order books and market summaries...");
-            connected = true;
             initializeMarketSummaries(callback);
         }
-        else console.log("Error: already connected.");
-    }.bind(this);
-
-    /**
-     * Returns orderbook for given market as object with two sorted arrays of orders.
-     * @param {string} marketName string in format 'BTC-ETH' to indicated market to pull order book from.
-     */
-    this.getOrderBook = function(marketName){
-        var sortedOrderBook = function(){};
-        var buys = [];
-        buys.length = 0;
-        var sells = [];
-        sells.length = 0;
-        if (orderBooks[marketName] != undefined){
-            for (var order in orderBooks[marketName].buy) buys.push(orderBooks[marketName].buy[order]);
-            for (var order in orderBooks[marketName].sell) sells.push(orderBooks[marketName].sell[order]);
-            buys.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
-            sells.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
-            sortedOrderBook.buy = buys;
-            sortedOrderBook.sell = sells;
-            return sortedOrderBook;
-        }
-        else console.log("ERROR: " + marketName + " is not a valid order book market.");
-    }
-
-    /**
-     * Print any errors that have occurred.
-     */
-    var printErrors = function(){
-        for (var err in errors) console.log(errors[err]);
-    }.bind(this);
-
-    /** 
-     * Adds a market summary to the this.marketSummaries object.
-     * @param {marketSummary} s
-    */
-    var addSummary = function(s){
-        this.marketSummaries[s.MarketName] = new marketSummary(s.MarketName, s.High, s.Low,
-            s.Volume, s.Last, s.BaseVolume, s.TimeStamp, s.Bid, s.Ask, s.OpenBuyOrders,
-            s.OpenSellOrders, s.PrevDay, s.Created);
     }.bind(this);
 
     /**
@@ -125,9 +86,49 @@ function BittrexOrderbook () {
             if (bookCount == Object.keys(this.marketSummaries).length){
                 console.log("Pulled all order books.");
                 printErrors();
-                callback();
+                connected = true;
+                typeof callback === 'function' && callback();
             }
         }.bind(this));
+    }.bind(this);
+
+    /**
+     * Returns orderbook for given market as object with two sorted arrays of orders.
+     * @param {string} marketName string in format 'BTC-ETH' to indicated market to pull order book from.
+     */
+    this.getOrderBook = function(marketName){
+        var sortedOrderBook = function(){};
+        var buys = [];
+        buys.length = 0;
+        var sells = [];
+        sells.length = 0;
+        if (orderBooks[marketName] != undefined){
+            for (var order in orderBooks[marketName].buy) buys.push(orderBooks[marketName].buy[order]);
+            for (var order in orderBooks[marketName].sell) sells.push(orderBooks[marketName].sell[order]);
+            buys.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
+            sells.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
+            sortedOrderBook.buy = buys;
+            sortedOrderBook.sell = sells;
+            return sortedOrderBook;
+        }
+        else console.log("ERROR: " + marketName + " is not a valid order book market.");
+    }
+
+    /**
+     * Print any errors that have occurred.
+     */
+    var printErrors = function(){
+        for (var err in errors) console.log(errors[err]);
+    }.bind(this);
+
+    /** 
+     * Adds a market summary to the this.marketSummaries object.
+     * @param {marketSummary} s
+    */
+    var addSummary = function(s){
+        this.marketSummaries[s.MarketName] = new marketSummary(s.MarketName, s.High, s.Low,
+            s.Volume, s.Last, s.BaseVolume, s.TimeStamp, s.Bid, s.Ask, s.OpenBuyOrders,
+            s.OpenSellOrders, s.PrevDay, s.Created);
     }.bind(this);
 
     /**
