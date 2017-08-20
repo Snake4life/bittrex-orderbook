@@ -105,7 +105,7 @@ function BittrexOrderbook () {
         if (orderBooks[marketName] != undefined){
             for (var order in orderBooks[marketName].buy) buys.push(orderBooks[marketName].buy[order]);
             for (var order in orderBooks[marketName].sell) sells.push(orderBooks[marketName].sell[order]);
-            buys.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
+            buys.sort(function (a, b){ return ((a.Rate) > (b.Rate)) ? -1 : (((b.Rate) > (a.Rate)) ? 1 : 0); });
             sells.sort(function (a, b){ return ((a.Rate) < (b.Rate)) ? -1 : (((b.Rate) < (a.Rate)) ? 1 : 0); });
             sortedOrderBook.buy = buys;
             sortedOrderBook.sell = sells;
